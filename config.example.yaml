@@ -1,0 +1,35 @@
+# Copy to config.yaml to customize your local settings
+
+system:
+  name: "Jarvis"
+  wake_words:
+    - "hey jarvis"
+    - "hey assistant"
+  debug: false
+
+audio:
+  input_device_index: null
+  output_device_index: null
+
+stt:
+  engine: "faster-whisper"
+  model_size: "tiny"
+  device: "cpu"
+
+tts:
+  engine: "pyttsx3"
+  rate: 190
+  volume: 1.0
+
+llm:
+  provider: "rule_based" # Switch to "ollama" or "openai" when ready
+  fallback_to_rules: true
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "llama3.2"
+  openai:
+    api_key: ""
+    model: "gpt-4o-mini"
+
+security:
+  require_confirmation_for_medium_risk: true

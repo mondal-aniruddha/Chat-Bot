@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "desktop-voice-assistant"
+version = "0.1.0"
+description = "A modular, local-first voice-controlled AI assistant for Windows desktop."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Aniruddha" }]
+dependencies = [
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.0",
+    "psutil>=5.9.0",
+    "colorama>=0.4.6",
+]
+
+[project.optional-dependencies]
+audio = [
+    "sounddevice>=0.4.6",
+    "numpy>=1.24.0",
+    "pyttsx3>=2.90",
+    "faster-whisper>=1.0.0",
+]
+gui = [
+    "PySide6>=6.5.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+all = [
+    "desktop-voice-assistant[audio,gui,dev]",
+]
+
+[project.scripts]
+assistant = "assistant.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["assistant*"]
+

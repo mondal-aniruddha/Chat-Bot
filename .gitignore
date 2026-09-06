@@ -1,0 +1,37 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local configuration and logs
+.env
+config.local.yaml
+logs/
+*.log
+
+# Models cache & downloads
+models/
+*.bin
+*.onnx
+
+# Packaging & distribution
+dist/
+build/
+*.egg-info/
+*.spec
+
+# IDEs and OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
