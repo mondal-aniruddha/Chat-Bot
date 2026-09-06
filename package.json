@@ -1,0 +1,16 @@
+{
+  "name": "desktop-voice-assistant-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack web console for Windows Desktop AI Voice Assistant",
+  "workspaces": [
+    "server",
+    "frontend"
+  ],
+  "scripts": {
+    "start": "npm --prefix server start",
+    "server": "npm --prefix server run dev",
+    "frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build"
+  }
+}
