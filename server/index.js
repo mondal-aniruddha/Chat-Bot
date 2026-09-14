@@ -124,6 +124,16 @@ app.post('/api/config', async (req, res) => {
   }
 });
 
+// Configured LLM model catalog. The Python bridge omits secrets by design.
+app.get('/api/models', async (req, res) => {
+  try {
+    res.json(await callPythonBridge('models'));
+  } catch (err) {
+    console.error('Failed to discover models:', err.message);
+    res.status(500).json({ error: 'Unable to retrieve configured LLM models.' });
+  }
+});
+
 // Manual State Transition
 app.post('/api/state', (req, res) => {
   const { state, reason } = req.body;
@@ -153,9 +163,12 @@ app.post('/api/hardware-listen', async (req, res) => {
 
 // Chat processing
 app.post('/api/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, modelId } = req.body;
   if (!message || typeof message !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid message property' });
+  }
+  if (modelId !== undefined && typeof modelId !== 'string') {
+    return res.status(400).json({ error: 'Invalid modelId property' });
   }
 
   // 1. Transition to THINKING
@@ -163,7 +176,7 @@ app.post('/api/chat', async (req, res) => {
 
   try {
     // 2. Call Python bridge for response
-    const reply = await callPythonBridge('chat', { message });
+    const reply = await callPythonBridge('chat', { message, modelId });
 
     // 3. Transition to SPEAKING
     updateState('speaking', 'Vocalizing response');
@@ -187,7 +200,12 @@ app.post('/api/chat', async (req, res) => {
     console.error('Error processing chat:', err.message);
     updateState('error', err.message);
     setTimeout(() => updateState('idle', 'Recovered from error'), 3000);
-    res.status(500).json({ error: err.message });
+    const isModelSelectionError = /selected model|unavailable|unsupported provider/i.test(err.message);
+    res.status(isModelSelectionError ? 400 : 500).json({
+      error: isModelSelectionError
+        ? 'The selected model is unavailable. Refresh the model list and choose another model.'
+        : 'Unable to process the chat request.',
+    });
   }
 });
 

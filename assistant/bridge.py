@@ -8,7 +8,7 @@ import os
 import platform
 import re
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 
@@ -126,6 +126,90 @@ def get_config_json() -> Dict[str, Any]:
     return mgr.config.model_dump()
 
 
+def _provider_is_ready(cfg: Any, provider: str) -> Tuple[bool, str]:
+    """Return whether a configured provider can accept a model request.
+
+    This intentionally checks configuration only. It never calls a provider
+    from a discovery endpoint and never exposes credentials to the browser.
+    """
+    provider_config = getattr(cfg.llm, provider, None)
+    if provider == "ollama":
+        return (bool(provider_config and provider_config.base_url), "Configured local endpoint")
+    if provider_config is None:
+        return False, "Unsupported provider"
+    if getattr(provider_config, "api_key", None):
+        return True, "Configured"
+    return False, "Credentials are not configured"
+
+
+def get_available_models() -> Dict[str, Any]:
+    """Build a safe, configuration-driven catalog for the frontend."""
+    cfg = get_config_manager().config
+    catalog: List[Dict[str, Any]] = []
+    seen_ids = set()
+
+    # Explicit catalog entries support multiple models per provider.
+    for configured in cfg.llm.models:
+        provider = configured.provider.strip().lower()
+        ready, status = _provider_is_ready(cfg, provider)
+        model_id = configured.id.strip()
+        if not model_id or model_id in seen_ids:
+            continue
+        seen_ids.add(model_id)
+        catalog.append({
+            "id": model_id,
+            "name": configured.name or configured.model,
+            "modelId": configured.model,
+            "provider": provider,
+            "contextWindow": configured.context_window,
+            "capabilities": configured.capabilities,
+            "available": bool(configured.enabled and ready),
+            "status": "Configured" if configured.enabled and ready else ("Disabled" if not configured.enabled else status),
+        })
+
+    # Preserve compatibility with an existing active single-provider setup.
+    provider = (cfg.llm.provider or "").strip().lower()
+    provider_config = getattr(cfg.llm, provider, None)
+    if provider_config is not None and getattr(provider_config, "model", None):
+        model_value = provider_config.model
+        legacy_id = f"{provider}:{model_value}"
+        if legacy_id not in seen_ids:
+            ready, status = _provider_is_ready(cfg, provider)
+            catalog.append({
+                "id": legacy_id,
+                "name": model_value,
+                "modelId": model_value,
+                "provider": provider,
+                "contextWindow": None,
+                "capabilities": ["text"],
+                "available": ready,
+                "status": status,
+            })
+
+    default_model = next((item["id"] for item in catalog if item["available"] and item["provider"] == provider), None)
+    if default_model is None:
+        default_model = next((item["id"] for item in catalog if item["available"]), None)
+    return {"models": catalog, "defaultModel": default_model}
+
+
+def _apply_model_selection(cfg: Any, selection_id: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Validate a UI selection and apply it to this request's config copy."""
+    if not selection_id:
+        return None
+    catalog = get_available_models()["models"]
+    selected = next((item for item in catalog if item["id"] == selection_id), None)
+    if selected is None:
+        raise ValueError("The selected model is no longer configured.")
+    if not selected["available"]:
+        raise ValueError(f"{selected['name']} is unavailable: {selected['status']}.")
+    provider_config = getattr(cfg.llm, selected["provider"], None)
+    if provider_config is None:
+        raise ValueError("The selected model's provider is not supported.")
+    cfg.llm.provider = selected["provider"]
+    provider_config.model = selected["modelId"]
+    return selected
+
+
 def save_config_json(updates: Dict[str, Any]) -> Dict[str, Any]:
     """Updates configuration values and saves them."""
     from pathlib import Path
@@ -162,11 +246,12 @@ def read_recent_logs(max_lines: int = 50) -> List[str]:
         return [f"Error reading logs: {e}"]
 
 
-def process_chat_message(message: str) -> Dict[str, Any]:
+def process_chat_message(message: str, model_id: Optional[str] = None) -> Dict[str, Any]:
     """Handles an interactive chat message through the rule-based intent engine and AI assistant logic."""
     cleaned = message.strip().lower()
     now = datetime.datetime.now()
-    cfg = get_config_manager().config
+    cfg = get_config_manager().config.model_copy(deep=True)
+    selected_model = _apply_model_selection(cfg, model_id)
     assistant_name = cfg.system.name
 
     # Intent Matching (Accurate word boundary matching for fast-path local queries)
@@ -236,12 +321,13 @@ def process_chat_message(message: str) -> Dict[str, Any]:
         "intent": intent,
         "timestamp": now.isoformat(),
         "assistant_name": assistant_name,
+        "model": selected_model,
     }
 
 
 def main():
     parser = argparse.ArgumentParser(description="Assistant Bridge CLI")
-    parser.add_argument("--action", required=True, choices=["status", "audio", "config", "save-config", "logs", "chat", "listen-hardware"])
+    parser.add_argument("--action", required=True, choices=["status", "audio", "config", "save-config", "logs", "models", "chat", "listen-hardware"])
     parser.add_argument("--data", default=None, help="JSON payload for actions that require input")
     parser.add_argument("--stdin", action="store_true", help="Read JSON data from standard input")
     parser.add_argument("--lines", type=int, default=50, help="Number of log lines to read")
@@ -268,10 +354,12 @@ def main():
             result = save_config_json(payload)
         elif args.action == "logs":
             result = {"lines": read_recent_logs(args.lines)}
+        elif args.action == "models":
+            result = get_available_models()
         elif args.action == "chat":
             payload = json.loads(raw_data)
             msg = payload.get("message", "")
-            result = process_chat_message(msg)
+            result = process_chat_message(msg, payload.get("modelId"))
         else:
             result = {"error": f"Unknown action {args.action}"}
 
