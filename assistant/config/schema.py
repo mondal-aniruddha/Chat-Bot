@@ -94,6 +94,23 @@ class OpenRouterConfig(BaseModel):
     timeout: int = Field(default=20, ge=1, le=120, description="Request timeout in seconds")
 
 
+class ConfiguredModel(BaseModel):
+    """A model exposed to the chat UI from local configuration.
+
+    ``id`` is a stable, UI-facing selection key. ``model`` is the provider's
+    actual API model identifier, which lets a friendly catalog name differ
+    from the identifier sent to the provider.
+    """
+
+    id: str = Field(description="Unique model selection ID, for example 'openai:gpt-4o-mini'")
+    provider: str = Field(description="Configured provider key, for example 'openai'")
+    model: str = Field(description="Provider API model identifier")
+    name: Optional[str] = Field(default=None, description="Friendly name shown in the UI")
+    context_window: Optional[int] = Field(default=None, ge=1, description="Optional context window size")
+    capabilities: List[str] = Field(default_factory=lambda: ["text"], description="Supported capabilities")
+    enabled: bool = Field(default=True, description="Whether this model can be selected")
+
+
 class LLMConfig(BaseModel):
     provider: str = Field(
         default="internet",
@@ -110,6 +127,10 @@ class LLMConfig(BaseModel):
     gemini: GeminiConfig = Field(default_factory=GeminiConfig)
     claude: ClaudeConfig = Field(default_factory=ClaudeConfig)
     openrouter: OpenRouterConfig = Field(default_factory=OpenRouterConfig)
+    models: List[ConfiguredModel] = Field(
+        default_factory=list,
+        description="Configured LLM catalog exposed through the model-discovery API",
+    )
 
 
 class ConversationConfig(BaseModel):

@@ -12,6 +12,9 @@ export default function App() {
   const [status, setStatus] = useState(null);
   const [audio, setAudio] = useState(null);
   const [config, setConfig] = useState(null);
+  const [modelCatalog, setModelCatalog] = useState([]);
+  const [selectedModelId, setSelectedModelId] = useState(null);
+  const [modelState, setModelState] = useState({ loading: true, error: null });
   const [logs, setLogs] = useState([]);
   const [messages, setMessages] = useState([
     {
@@ -54,6 +57,27 @@ export default function App() {
     }
   };
 
+  const fetchModels = async () => {
+    setModelState({ loading: true, error: null });
+    try {
+      const res = await fetch('/api/models');
+      if (!res.ok) throw new Error('Model catalog could not be loaded');
+      const data = await res.json();
+      const models = Array.isArray(data.models) ? data.models : [];
+      setModelCatalog(models);
+      setSelectedModelId((current) => {
+        const saved = current || window.localStorage.getItem('assistant.selectedModelId');
+        const savedModel = models.find((model) => model.id === saved && model.available);
+        return savedModel ? savedModel.id : (data.defaultModel || null);
+      });
+      setModelState({ loading: false, error: null });
+    } catch (error) {
+      console.warn('Model discovery error:', error);
+      setModelCatalog([]);
+      setModelState({ loading: false, error: 'Unable to load configured LLM models.' });
+    }
+  };
+
   const fetchLogs = async () => {
     try {
       const res = await fetch('/api/logs?lines=40');
@@ -70,6 +94,7 @@ export default function App() {
     fetchStatus();
     fetchAudio();
     fetchConfig();
+    fetchModels();
     fetchLogs();
 
     // Regular polling for hardware telemetry & logs
@@ -124,10 +149,13 @@ export default function App() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, modelId: selectedModelId || undefined }),
       });
 
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      if (!res.ok) {
+        const errorPayload = await res.json().catch(() => ({}));
+        throw new Error(errorPayload.error || `Server returned ${res.status}`);
+      }
       const data = await res.json();
 
       const aiMsg = {
@@ -166,6 +194,12 @@ export default function App() {
       ]);
       setTimeout(() => setCurrentState('idle'), 3000);
     }
+  };
+
+  const handleModelChange = (modelId) => {
+    setSelectedModelId(modelId || null);
+    if (modelId) window.localStorage.setItem('assistant.selectedModelId', modelId);
+    else window.localStorage.removeItem('assistant.selectedModelId');
   };
 
   // Manual state transition
@@ -211,6 +245,7 @@ export default function App() {
     if (!res.ok) throw new Error('Failed to save configuration');
     const result = await res.json();
     if (result.config) setConfig(result.config);
+    fetchModels();
     return result;
   };
 
@@ -290,6 +325,11 @@ export default function App() {
             isListening={currentState === 'listening'}
             isThinking={currentState === 'thinking'}
             onAudioLevel={setAudioLevel}
+            models={modelCatalog}
+            selectedModelId={selectedModelId}
+            modelLoading={modelState.loading}
+            modelError={modelState.error}
+            onModelChange={handleModelChange}
           />
         </section>
 

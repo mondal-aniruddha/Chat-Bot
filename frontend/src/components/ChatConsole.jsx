@@ -11,6 +11,11 @@ export default function ChatConsole({
   isListening = false,
   isThinking = false,
   onAudioLevel,
+  models = [],
+  selectedModelId,
+  modelLoading = false,
+  modelError = null,
+  onModelChange,
 }) {
   const [inputText, setInputText] = useState('');
   const [liveTranscript, setLiveTranscript] = useState('');
@@ -263,6 +268,13 @@ export default function ChatConsole({
     'Tell me a joke',
   ];
 
+  const modelsByProvider = models.reduce((groups, model) => {
+    const provider = model.provider || 'Other';
+    (groups[provider] ||= []).push(model);
+    return groups;
+  }, {});
+  const selectedModel = models.find((model) => model.id === selectedModelId);
+
   return (
     <div className="glass-panel chat-panel" id="chat-console">
       <div className="panel-header">
@@ -279,6 +291,49 @@ export default function ChatConsole({
           )}
           <span style={{ color: 'var(--text-muted)' }}>{messages.length} interactions</span>
         </div>
+      </div>
+
+      <div className="model-selector" aria-live="polite">
+        <label className="model-selector-label" htmlFor="model-selector">Select Model</label>
+        {modelLoading ? (
+          <div className="model-selector-message">Loading configured models…</div>
+        ) : modelError ? (
+          <div className="model-selector-message error">{modelError}</div>
+        ) : models.length === 0 ? (
+          <div className="model-selector-message">No LLM models are currently configured.</div>
+        ) : (
+          <>
+            <select
+              id="model-selector"
+              className="model-selector-control"
+              value={selectedModelId || ''}
+              onChange={(event) => onModelChange?.(event.target.value)}
+              disabled={isThinking}
+              aria-label="Select language model"
+              aria-describedby="selected-model-details"
+            >
+              {!selectedModelId && <option value="">Choose an available model</option>}
+              {Object.entries(modelsByProvider).map(([provider, providerModels]) => (
+                <optgroup key={provider} label={provider}>
+                  {providerModels.map((model) => (
+                    <option key={model.id} value={model.id} disabled={!model.available}>
+                      {model.name}{model.available ? '' : ` — ${model.status}`}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <div id="selected-model-details" className="selected-model-details">
+              {selectedModel ? (
+                <span title={`Model ID: ${selectedModel.modelId}. ${selectedModel.capabilities?.join(', ') || 'Text'} capabilities. ${selectedModel.status}`}>
+                  {selectedModel.provider} · {selectedModel.modelId}
+                  {selectedModel.contextWindow ? ` · ${selectedModel.contextWindow.toLocaleString()} context` : ''}
+                  {selectedModel.capabilities?.length ? ` · ${selectedModel.capabilities.join(', ')}` : ''}
+                </span>
+              ) : 'Choose a configured model to use for subsequent messages.'}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Error Alert Banner */}

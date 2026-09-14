@@ -30,6 +30,15 @@ llm:
   openai:
     api_key: ""
     model: "gpt-4o-mini"
+  # The UI reads this catalog dynamically. Add or remove entries here; no
+  # frontend changes are required. Models without configured credentials are
+  # shown as unavailable and cannot be selected.
+  models:
+    - id: "openai:gpt-4o-mini"
+      provider: "openai"
+      model: "gpt-4o-mini"
+      name: "GPT-4o mini"
+      capabilities: ["text", "vision"]
 
 security:
   require_confirmation_for_medium_risk: true

@@ -476,6 +476,56 @@ body::before {
   height: calc(100vh - 120px);
 }
 
+.model-selector {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr);
+  align-items: center;
+  gap: 6px 12px;
+  margin: -4px 0 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+}
+
+.model-selector-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.model-selector-control {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 0.82rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.model-selector-control:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.model-selector-message,
+.selected-model-details {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.model-selector-message.error { color: #fca5a5; }
+
+@media (max-width: 560px) {
+  .model-selector { grid-template-columns: 1fr; gap: 6px; }
+}
+
 .chat-history {
   flex: 1;
   overflow-y: auto;
