@@ -7,7 +7,6 @@ system:
   - hi assistant
   - hi jarvis
   - hi mondal
-
   language: en
   debug: false
 audio:
@@ -29,17 +28,33 @@ tts:
   volume: 1.0
   voice_id: null
 llm:
-  provider: rule_based
+  provider: internet
   fallback_to_rules: true
+  fallback_to_internet: true
   ollama:
     base_url: http://localhost:11434
     model: llama3.2
     timeout: 15
   openai:
     base_url: https://api.openai.com/v1
-    api_key: null
+    api_key: ''
     model: gpt-4o-mini
     timeout: 15
+  gemini:
+    api_key: null
+    model: gemini-2.0-flash
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    timeout: 15
+  claude:
+    api_key: null
+    model: claude-3-5-haiku-20241022
+    base_url: https://api.anthropic.com/v1
+    timeout: 15
+  openrouter:
+    api_key: null
+    model: google/gemini-2.0-flash-exp:free
+    base_url: https://openrouter.ai/api/v1
+    timeout: 20
 conversation:
   max_history_turns: 20
   system_prompt: 'You are a helpful, concise, and friendly Windows desktop voice assistant.

@@ -21,7 +21,7 @@ def test_default_config_loading():
     assert cfg.audio.channels == 1
     assert cfg.stt.engine == "faster-whisper"
     assert cfg.tts.engine == "pyttsx3"
-    assert cfg.llm.provider in ["rule_based", "ollama", "openai"]
+    assert cfg.llm.provider in ["rule_based", "ollama", "openai", "gemini", "claude", "internet", "openrouter"]
 
 
 def test_deep_merge():

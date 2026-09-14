@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import platform
+import re
 import sys
 from typing import Any, Dict, List
 
@@ -168,14 +169,14 @@ def process_chat_message(message: str) -> Dict[str, Any]:
     cfg = get_config_manager().config
     assistant_name = cfg.system.name
 
-    # Intent Matching
-    if any(greet in cleaned for greet in ["hello", "hi", "hey", "good morning", "good evening"]):
+    # Intent Matching (Accurate word boundary matching for fast-path local queries)
+    if re.search(r"\b(hello|hi|hey|good morning|good evening|howdy)\b", cleaned):
         response = f"Hello! I am {assistant_name}, your Windows desktop AI voice assistant. How can I assist you today?"
         intent = "greeting"
-    elif "time" in cleaned or "clock" in cleaned:
+    elif re.search(r"\b(what time is it|current time|what is the time|clock)\b", cleaned) or (re.search(r"\btime\b", cleaned) and not re.search(r"\b(times|first time|many times|at a time)\b", cleaned) and any(w in cleaned for w in ["what", "tell", "current"])):
         response = f"The current time is {now.strftime('%I:%M %p')}."
         intent = "query_time"
-    elif "date" in cleaned or "day" in cleaned:
+    elif re.search(r"\b(what('s| is) (the )?date|today'?s date|what day is (it|today))\b", cleaned):
         response = f"Today is {now.strftime('%A, %B %d, %Y')}."
         intent = "query_date"
     elif "system" in cleaned or "spec" in cleaned or "ram" in cleaned or "cpu" in cleaned:
@@ -216,12 +217,15 @@ def process_chat_message(message: str) -> Dict[str, Any]:
         )
         intent = "query_identity"
     else:
-        # Default conversational response (can be augmented by LLM)
-        response = (
-            f"I received your request: '{message}'. "
-            f"I am operating in {cfg.llm.provider} mode. Ready to execute your instructions or voice commands."
-        )
-        intent = "general_query"
+        # Route to active LLM (Gemini, OpenAI, Claude, Ollama) or Internet Knowledge engine
+        try:
+            from assistant.llm_client import query_assistant_intelligence
+            response, provider_tag = query_assistant_intelligence(message, cfg)
+            intent = f"ai_{provider_tag}"
+        except Exception as e:
+            logger.error(f"Intelligence processing failed: {e}", exc_info=True)
+            response = f"I encountered an issue processing your query: {e}"
+            intent = "error"
 
     # Log the interaction
     logger.info(f"Chat interaction: query='{message}' intent='{intent}'")

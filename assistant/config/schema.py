@@ -67,15 +67,49 @@ class OpenAIConfig(BaseModel):
     timeout: int = Field(default=15, ge=1, le=120, description="Request timeout in seconds")
 
 
+class GeminiConfig(BaseModel):
+    api_key: Optional[str] = Field(default=None, description="API Key for Google Gemini (AI Studio)")
+    model: str = Field(default="gemini-2.0-flash", description="Gemini model name: 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'")
+    base_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta",
+        description="Google Gemini API endpoint URL"
+    )
+    timeout: int = Field(default=15, ge=1, le=120, description="Request timeout in seconds")
+
+
+class ClaudeConfig(BaseModel):
+    api_key: Optional[str] = Field(default=None, description="API Key for Anthropic Claude")
+    model: str = Field(default="claude-3-5-haiku-20241022", description="Claude model name: 'claude-3-5-haiku-20241022', 'claude-3-7-sonnet-20250219'")
+    base_url: str = Field(default="https://api.anthropic.com/v1", description="Anthropic API base URL")
+    timeout: int = Field(default=15, ge=1, le=120, description="Request timeout in seconds")
+
+
+class OpenRouterConfig(BaseModel):
+    api_key: Optional[str] = Field(default=None, description="API Key for OpenRouter (Free models available)")
+    model: str = Field(
+        default="google/gemini-2.0-flash-exp:free",
+        description="OpenRouter model name (e.g. 'google/gemini-2.0-flash-exp:free', 'deepseek/deepseek-r1:free', 'meta-llama/llama-3.3-70b-instruct:free')"
+    )
+    base_url: str = Field(default="https://openrouter.ai/api/v1", description="OpenRouter API base URL")
+    timeout: int = Field(default=20, ge=1, le=120, description="Request timeout in seconds")
+
+
 class LLMConfig(BaseModel):
     provider: str = Field(
-        default="rule_based", description="Active reasoning engine: 'rule_based', 'ollama', 'openai'"
+        default="internet",
+        description="Active reasoning engine: 'internet', 'gemini', 'openrouter', 'openai', 'claude', 'ollama', 'rule_based'"
     )
     fallback_to_rules: bool = Field(
         default=True, description="Fallback to offline rule matcher if external LLM fails"
     )
+    fallback_to_internet: bool = Field(
+        default=True, description="Fallback to DuckDuckGo/Wikipedia knowledge if LLM key is absent or fails"
+    )
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
+    gemini: GeminiConfig = Field(default_factory=GeminiConfig)
+    claude: ClaudeConfig = Field(default_factory=ClaudeConfig)
+    openrouter: OpenRouterConfig = Field(default_factory=OpenRouterConfig)
 
 
 class ConversationConfig(BaseModel):

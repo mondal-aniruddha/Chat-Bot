@@ -37,8 +37,28 @@ class ConfigManager:
             self.load()
         return self._config
 
+    def _load_dotenv(self) -> None:
+        """Loads key=value pairs from a local .env file into os.environ."""
+        env_files = [Path.cwd() / ".env", Path(__file__).resolve().parent.parent.parent / ".env"]
+        for env_path in env_files:
+            if env_path.exists():
+                try:
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line or line.startswith("#") or "=" not in line:
+                                continue
+                            k, v = line.split("=", 1)
+                            k = k.strip()
+                            v = v.strip().strip("'\"")
+                            if k and k not in os.environ:
+                                os.environ[k] = v
+                except Exception:
+                    pass
+
     def load(self) -> AppConfig:
         """Loads configuration by layering defaults, custom/user file, and environment variables."""
+        self._load_dotenv()
         merged_data: Dict[str, Any] = {}
 
         # 1. Load default configuration if file exists, else use Pydantic defaults
@@ -104,6 +124,8 @@ class ConfigManager:
             data.setdefault("stt", {})["model_size"] = os.environ["STT_MODEL_SIZE"]
 
         # LLM overrides
+        if "LLM_PROVIDER" in os.environ:
+            data.setdefault("llm", {})["provider"] = os.environ["LLM_PROVIDER"]
         if "OLLAMA_BASE_URL" in os.environ:
             data.setdefault("llm", {}).setdefault("ollama", {})["base_url"] = os.environ["OLLAMA_BASE_URL"]
         if "OLLAMA_MODEL" in os.environ:
@@ -114,6 +136,19 @@ class ConfigManager:
             data.setdefault("llm", {}).setdefault("openai", {})["base_url"] = os.environ["OPENAI_BASE_URL"]
         if "OPENAI_MODEL" in os.environ:
             data.setdefault("llm", {}).setdefault("openai", {})["model"] = os.environ["OPENAI_MODEL"]
+        if "GEMINI_API_KEY" in os.environ:
+            data.setdefault("llm", {}).setdefault("gemini", {})["api_key"] = os.environ["GEMINI_API_KEY"]
+        if "GEMINI_MODEL" in os.environ:
+            data.setdefault("llm", {}).setdefault("gemini", {})["model"] = os.environ["GEMINI_MODEL"]
+        claude_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("CLAUDE_API_KEY")
+        if claude_key:
+            data.setdefault("llm", {}).setdefault("claude", {})["api_key"] = claude_key
+        if "CLAUDE_MODEL" in os.environ:
+            data.setdefault("llm", {}).setdefault("claude", {})["model"] = os.environ["CLAUDE_MODEL"]
+        if "OPENROUTER_API_KEY" in os.environ:
+            data.setdefault("llm", {}).setdefault("openrouter", {})["api_key"] = os.environ["OPENROUTER_API_KEY"]
+        if "OPENROUTER_MODEL" in os.environ:
+            data.setdefault("llm", {}).setdefault("openrouter", {})["model"] = os.environ["OPENROUTER_MODEL"]
 
     def save_to_file(self, path: Path) -> None:
         """Saves current configuration to a YAML file."""
