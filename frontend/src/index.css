@@ -1016,3 +1016,279 @@ body::before {
   gap: 12px;
   margin-top: 2rem;
 }
+
+/* ========================================================================
+   POLISH PASS - AMBIENT MOTION, DEPTH & RESPONSIVE RHYTHM
+   ======================================================================== */
+
+body::after {
+  content: '';
+  position: fixed;
+  width: 34rem;
+  height: 34rem;
+  top: 18%;
+  left: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.06), transparent 68%);
+  filter: blur(18px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: ambient-drift 18s ease-in-out infinite alternate;
+}
+
+.app-header {
+  background: linear-gradient(180deg, rgba(7, 10, 19, 0.96), rgba(7, 10, 19, 0.78));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 36px rgba(0, 0, 0, 0.16);
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.55), rgba(139, 92, 246, 0.55), transparent);
+  opacity: 0.8;
+}
+
+.brand-icon {
+  position: relative;
+  animation: brand-glow 4s ease-in-out infinite;
+}
+
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgba(0, 242, 254, 0.28);
+  border-radius: inherit;
+  animation: icon-ring 3.5s ease-in-out infinite;
+}
+
+.header-status-badge {
+  transition: border-color var(--transition-normal), background var(--transition-normal), transform var(--transition-normal);
+}
+
+.header-status-badge:hover {
+  border-color: var(--border-glass-glow);
+  background: rgba(0, 242, 254, 0.08);
+  transform: translateY(-1px);
+}
+
+.main-container {
+  position: relative;
+  isolation: isolate;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.main-container::before {
+  content: 'SYSTEM / ONLINE';
+  position: absolute;
+  top: 0.55rem;
+  right: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: rgba(148, 163, 184, 0.46);
+}
+
+.column-left,
+.column-center,
+.column-right {
+  min-width: 0;
+  animation: panel-enter 0.7s both cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.column-left { animation-delay: 0.05s; }
+.column-center { animation-delay: 0.12s; }
+.column-right { animation-delay: 0.19s; }
+
+.glass-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  width: 11rem;
+  height: 11rem;
+  top: -7rem;
+  right: -5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.11), transparent 70%);
+  pointer-events: none;
+}
+
+.glass-panel:hover {
+  border-color: rgba(0, 242, 254, 0.2);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.34), 0 0 30px rgba(0, 242, 254, 0.04);
+}
+
+.panel-header {
+  position: relative;
+  z-index: 1;
+}
+
+.panel-title::before {
+  content: '';
+  width: 5px;
+  height: 1.1rem;
+  border-radius: 4px;
+  background: linear-gradient(var(--cyan), var(--violet));
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.orb-canvas-wrapper {
+  transition: transform var(--transition-normal), filter var(--transition-normal);
+}
+
+.orb-canvas-wrapper:hover {
+  transform: scale(1.035);
+  filter: brightness(1.08);
+}
+
+.orb-canvas-wrapper:active {
+  transform: scale(0.98);
+}
+
+.orb-status-text {
+  animation: status-flicker 4s ease-in-out infinite;
+}
+
+.metric-card,
+.device-card,
+.model-selector,
+.message-bubble,
+.quick-chip {
+  transition: transform var(--transition-normal), border-color var(--transition-normal), background var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.metric-card:hover,
+.device-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 242, 254, 0.24);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.message-item {
+  animation-duration: 0.45s;
+}
+
+.message-avatar {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.message-item:hover .message-avatar {
+  transform: translateY(-2px) rotate(-3deg);
+}
+
+.chat-input-bar:focus-within {
+  border-color: rgba(0, 242, 254, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.08), 0 8px 28px rgba(0, 0, 0, 0.28);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.logs-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes ambient-drift {
+  0% { transform: translate(-50%, -4%) scale(0.92); opacity: 0.55; }
+  100% { transform: translate(-42%, 8%) scale(1.12); opacity: 1; }
+}
+
+@keyframes panel-enter {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes brand-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--cyan-glow); }
+  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.48); }
+}
+
+@keyframes icon-ring {
+  0%, 100% { transform: scale(0.92); opacity: 0.25; }
+  50% { transform: scale(1.12); opacity: 0.75; }
+}
+
+@keyframes status-flicker {
+  0%, 100% { opacity: 0.86; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 992px) {
+  .main-container {
+    padding-top: 1.5rem;
+  }
+
+  .main-container::before {
+    display: none;
+  }
+
+  .chat-panel {
+    height: min(720px, calc(100vh - 104px));
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    height: auto;
+    min-height: 68px;
+    padding: 0.8rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .brand-subtitle,
+  .header-status-badge span:last-child,
+  .header-actions .btn span {
+    display: none;
+  }
+
+  .brand-title {
+    font-size: 1.05rem;
+  }
+
+  .header-status-badge {
+    margin-left: auto;
+    padding: 8px;
+  }
+
+  .main-container {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .glass-panel {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  .orb-container {
+    height: 215px;
+  }
+
+  .orb-canvas-wrapper {
+    transform: scale(0.88);
+  }
+
+  .orb-canvas-wrapper:hover {
+    transform: scale(0.91);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
